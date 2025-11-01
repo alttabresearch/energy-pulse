@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Pulse - Oil & Gas Newsletter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-bg: #ffffff;
+            --color-text: #1a1a1a;
+            --color-primary: #5D5CDE;
+            --color-border: #e0e0e0;
+            --color-card: #f8f9fa;
+            --color-positive: #10b981;
+            --color-negative: #ef4444;
+            --color-neutral: #6b7280;
+            --color-demo-banner: #fef3c7;
+            --color-demo-text: #92400e;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-bg: #181818;
+                --color-text: #e5e5e5;
+                --color-card: #242424;
+                --color-border: #3a3a3a;
+                --color-demo-banner: #422006;
+                --color-demo-text: #fef3c7;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+            padding: 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--color-primary);
+        }
+
+        .header-top {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            color: var(--color-primary);
+            font-weight: 700;
+        }
+
+        .quote-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .quote {
+            font-style: italic;
+            color: var(--color-text);
+            font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+            line-height: 1.6;
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .quote-author {
+            font-weight: 600;
+            font-style: normal;
+            color: var(--color-neutral);
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+        }
+
+        .header-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .datetime {
+            font-size: 0.95rem;
+            color: var(--color-neutral);
+            font-variant-numeric: tabular-nums;
+        }
+
+        button {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 0.65rem 1.25rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background: var(--color-neutral);
+        }
+
+        .demo-banner {
+            background: var(--color-demo-banner);
+            color: var(--color-demo-text);
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .timestamp {
+            font-size: 0.85rem;
+            color: var(--color-neutral);
+            font-style: italic;
+        }
+
+        .loader {
+            text-align: center;
+            padding: 2rem;
+            color: var(--color-neutral);
+        }
+
+        .spinner {
+            border: 3px solid var(--color-border);
+            border-top-color: var(--color-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid #c00;
+        }
+
+        /* Treemap */
+        .treemap-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: var(--color-card);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .treemap-group {
+            position: absolute;
+            border: 2px solid rgba(0,0,0,0.3);
+        }
+
+        .treemap-group-label {
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            opacity: 0.9;
+            background: rgba(0,0,0,0.15);
+            padding: 2px 6px;
+            border-radius: 3px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .treemap-cell {
+            position: absolute;
+            border: 1px solid rgba(255,255,255,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0.25rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            overflow: hidden;
+        }
+
+        .treemap-cell:hover {
+            opacity: 0.85;
+            border-color: rgba(255,255,255,0.8);
+            border-width: 2px;
+            z-index: 20;
+        }
+
+        .treemap-cell-ticker {
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .treemap-cell-name {
+            font-size: 0.65rem;
+            opacity: 0.9;
+            text-align: center;
+        }
+
+        .treemap-cell-change {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.15rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .treemap-cell-small {
+            font-size: 0.7rem;
+        }
+
+        .treemap-cell-small .treemap-cell-ticker {
+            font-size: 0.7rem;
+        }
+
+        .treemap-cell-small .treemap-cell-change {
+            font-size: 0.65rem;
+        }
+
+        .treemap-legend {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-gradient {
+            display: flex;
+            height: 20px;
+            width: 200px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .legend-gradient-segment {
+            flex: 1;
+        }
+
+        .legend-labels {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+        }
+
+        /* Prices */
+        .prices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .price-card {
+            background: var(--color-card);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 1.25rem;
+        }
+
+        .price-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .price-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .price-change {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .price-sparkline {
+            width: 100%;
+            height: 60px;
+            margin-top: 1rem;
+        }
+
+        .price-meta {
+            font-size: 0.8rem;
+            color: var(--color-neutral);
+            margin-top: 0.5rem;
+        }
+
+        /* News */
+        .news-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .news-card {
+            background: var(--color-card);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 1.25rem;
+        }
+
+        .news-headline {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .news-headline a {
+            color: var(--color-text);
+            text-decoration: none;
+        }
+
+        .news-headline a:hover {
+            color: var(--color-primary);
+        }
+
+        .news-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--color-neutral);
+            margin-bottom: 0.75rem;
+        }
+
+        .news-source {
+            font-weight: 600;
+        }
+
+        .news-summary {
+            color: var(--color-text);
+            margin-bottom: 0.75rem;
+        }
+
+        .news-link {
+            font-size: 0.85rem;
+            word-break: break-all;
+        }
+
+        .news-link a {
+            color: var(--color-primary);
+            text-decoration: none;
+        }
+
+        .print-url {
+            display: none;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                color: black;
+                padding: 0.5in;
+                max-width: none;
+            }
+
+            header {
+                border-bottom-color: #5D5CDE;
+            }
+
+            button, .loader, .spinner, .demo-banner {
+                display: none !important;
+            }
+
+            .section {
+                page-break-inside: avoid;
+            }
+
+            .treemap-container {
+                height: 400px;
+                background: white;
+                border: 1px solid #ccc;
+            }
+
+            .price-card, .news-card {
+                background: white;
+                border: 1px solid #ccc;
+                page-break-inside: avoid;
+            }
+
+            .print-url {
+                display: block;
+                font-size: 0.75rem;
+                color: #666;
+                margin-top: 0.25rem;
+                word-break: break-all;
+            }
+
+            a {
+                color: black;
+                text-decoration: none;
+            }
+
+            .news-link {
+                display: none;
+            }
+
+            h1 {
+                color: #5D5CDE;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .treemap-container {
+                height: 500px;
+            }
+
+            .legend-gradient {
+                width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <h1>⚡ Energy Pulse</h1>
+            <div class="header-controls">
+                <div class="datetime" id="datetime"></div>
+                <button id="generateBtn" onclick="generate()">Generate</button>
+                <button class="secondary" onclick="window.print()">Print PDF</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="content">
+        <div class="quote-container">
+            <div class="quote" id="quote-text"></div>
+            <div class="quote-author" id="quote-author"></div>
+        </div>
+    </main>
+
+    <script>
+        // ===== CONFIGURATION =====
+        const CONFIG = {
+            apiKeys: {
+                fmpKey: 'Uif0pFeo5v0faYler20n1Bc8WpkhrTMN',
+                finnhubKey: '',
+                newsApiKey: '',
+                bingKey: '',
+                twitterBearer: '',
+                redditClientId: '',
+                redditSecret: ''
+            },
+            demoMode: false, // Set to true to use mock data
+            useBackend: true, // Use Vercel backend (recommended)
+            backendUrl: '', // Leave empty to use same domain, or set to your Vercel URL
+            useCorsProxy: false, // Fallback: Use CORS proxy (not recommended for production)
+            corsProxyUrl: 'https://corsproxy.io/?', // CORS proxy service
+            debug: true,
+            timeout: 10000,
+            retries: 2,
+            fallbackTickers: [
+                'XOM', 'CVX', 'BP', 'SHEL', 'COP', 'EOG', 'OXY', 'SLB', 'HAL', 'BKR',
+                'MPC', 'PSX', 'VLO', 'DVN', 'APA', 'CTRA', 'FANG', 'MRO',
+                'HES', 'KMI', 'WMB', 'OKE', 'TRGP', 'LNG', 'ENB', 'TRP', 'DINO', 'EQT', 'TPL'
+            ],
+            subsectors: {
+                'Integrated': ['XOM', 'CVX', 'BP', 'SHEL'],
+                'Upstream': ['COP', 'EOG', 'OXY', 'DVN', 'APA', 'CTRA', 'FANG', 'MRO', 'HES', 'DINO', 'EQT', 'TPL'],
+                'Midstream': ['KMI', 'WMB', 'OKE', 'TRGP', 'LNG', 'ENB', 'TRP'],
+                'Downstream': ['MPC', 'PSX', 'VLO'],
+                'Services': ['SLB', 'HAL', 'BKR']
+            },
+            energySymbols: [
+                { symbol: 'CL=F', name: 'WTI Crude Oil', unit: 'USD/bbl' },
+                { symbol: 'NG=F', name: 'Natural Gas', unit: 'USD/MMBtu' },
+                { symbol: 'RB=F', name: 'RBOB Gasoline', unit: 'USD/gal' }
+            ]
+        };
+
+        // ===== UTILITIES =====
+        function log(...args) {
+            if (CONFIG.debug) console.log('[Energy Pulse]', ...args);
+        }
+
+        function formatNumber(num, decimals = 2) {
+            if (num === null || num === undefined) return 'N/A';
+            return num.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        }
+
+        function formatPercent(num) {
+            if (num === null || num === undefined) return 'N/A';
+            const sign = num >= 0 ? '+' : '';
+            return `${sign}${num.toFixed(2)}%`;
+        }
+
+        function formatMarketCap(cap) {
+            if (cap >= 1e12) return `$${(cap / 1e12).toFixed(2)}T`;
+            if (cap >= 1e9) return `$${(cap / 1e9).toFixed(2)}B`;
+            if (cap >= 1e6) return `$${(cap / 1e6).toFixed(2)}M`;
+            return `$${cap.toLocaleString()}`;
+        }
+
+        function timeAgo(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+
+            if (seconds < 60) return 'just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            return `${Math.floor(seconds / 86400)}d ago`;
+        }
+
+        async function fetchWithTimeout(url, options = {}, timeout = CONFIG.timeout) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+                clearTimeout(id);
+                return response;
+            } catch (error) {
+                clearTimeout(id);
+                throw error;
+            }
+        }
+
+        function getChangeColor(change) {
+            if (change > 0) return 'var(--color-positive)';
+            if (change < 0) return 'var(--color-negative)';
+            return 'var(--color-neutral)';
+        }
+
+        function getHeatmapColor(percent) {
+            // Red (-5%) to Gray (0%) to Green (+5%)
+            const normalized = Math.max(-5, Math.min(5, percent)) / 5;
+
+            if (normalized < 0) {
+                // Red gradient
+                const intensity = Math.abs(normalized);
+                const r = Math.floor(239 - (239 - 220) * (1 - intensity));
+                const g = Math.floor(68 + (100 - 68) * (1 - intensity));
+                const b = Math.floor(68 + (100 - 68) * (1 - intensity));
+                return `rgb(${r}, ${g}, ${b})`;
+            } else {
+                // Green gradient
+                const intensity = normalized;
+                const r = Math.floor(107 + (16 - 107) * intensity);
+                const g = Math.floor(114 + (185 - 114) * intensity);
+                const b = Math.floor(128 + (129 - 128) * intensity);
+                return `rgb(${r}, ${g}, ${b})`;
+            }
+        }
+
+        // ===== DATE/TIME =====
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById('datetime').textContent = now.toLocaleString('en-US', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        // ===== QUOTE OF THE DAY =====
+        const QUOTES = [
+            {
+                text: "The Stone Age did not end for lack of stone, and the Oil Age will end long before the world runs out of oil.",
+                author: "Sheikh Ahmed Zaki Yamani"
+            },
+            {
+                text: "Control oil and you control nations; control food and you control the people.",
+                author: "Henry Kissinger"
+            },
+            {
+                text: "Renewables are not going to replace fossil fuels overnight. It's going to be a long transition.",
+                author: "Darren Woods, CEO of ExxonMobil"
+            },
+            {
+                text: "The meek shall inherit the earth, but not its mineral rights.",
+                author: "J. Paul Getty"
+            },
+            {
+                text: "Energy is the master resource, because energy enables us to convert one material into another.",
+                author: "Thomas Sowell"
+            },
+            {
+                text: "We are in the most profound energy transformation since the beginning of the Industrial Revolution.",
+                author: "Fatih Birol, Executive Director of IEA"
+            },
+            {
+                text: "I'd put my money on the sun and solar energy. What a source of power! I hope we don't have to wait until oil and coal run out before we tackle that.",
+                author: "Thomas Edison"
+            },
+            {
+                text: "The world will not transition away from fossil fuels until we have something better, not just more expensive.",
+                author: "Vicki Hollub, CEO of Occidental Petroleum"
+            },
+            {
+                text: "Energy security is national security. We must be able to produce our own energy.",
+                author: "Harold Hamm, Continental Resources"
+            },
+            {
+                text: "The era of low-cost oil is over. The era of energy abundance is not.",
+                author: "Daniel Yergin"
+            },
+            {
+                text: "Natural gas is the bridge fuel to the future, but we must build the bridge while we're standing on it.",
+                author: "Charif Souki, Founder of Cheniere Energy"
+            },
+            {
+                text: "We are at the beginning of a new energy age, one that will be cleaner, more distributed, and more digital.",
+                author: "Ben van Beurden, Former CEO of Shell"
+            },
+            {
+                text: "The best way to predict the future is to invent it, and that's what we're doing in energy.",
+                author: "Lynn Elsenhans, Former CEO of Sunoco"
+            },
+            {
+                text: "Oil is much too important a commodity to be left in the hands of the Arabs.",
+                author: "Henry Kissinger"
+            },
+            {
+                text: "The future of energy is not oil OR renewables. It's oil AND renewables for decades to come.",
+                author: "Bob Dudley, Former CEO of BP"
+            },
+            {
+                text: "Without energy, there is no economy. Without climate, there is no society.",
+                author: "Patrick Pouyanné, CEO of TotalEnergies"
+            },
+            {
+                text: "Energy is the only universal currency: one of its many forms must be transformed into another in order for even the simplest processes to proceed.",
+                author: "Vaclav Smil"
+            },
+            {
+                text: "The question is not whether we transition to renewables, but how fast and how smart we do it.",
+                author: "Mike Wirth, CEO of Chevron"
+            },
+            {
+                text: "Oil and gas will be part of the energy mix for decades to come. The question is how we produce it responsibly.",
+                author: "Ryan Lance, CEO of ConocoPhillips"
+            },
+            {
+                text: "The cure for low prices is low prices, and the cure for high prices is high prices.",
+                author: "Old Oil Industry Adage"
+            },
+            {
+                text: "Energy efficiency is the first fuel—it's the cheapest, cleanest, and most abundant energy source.",
+                author: "Steven Chu, Former U.S. Secretary of Energy"
+            },
+            {
+                text: "The world needs oil and gas. The world also needs to reduce emissions. These are not contradictory goals.",
+                author: "Amin Nasser, CEO of Saudi Aramco"
+            },
+            {
+                text: "LNG is not just a fuel; it's a geopolitical tool that reshapes global energy trade.",
+                author: "Jack Fusco, Former CEO of Cheniere Energy"
+            },
+            {
+                text: "The pipeline is the most efficient, safest way to transport oil and gas. Politics shouldn't override physics.",
+                author: "Russ Girling, Former CEO of TC Energy"
+            },
+            {
+                text: "Energy independence is achieved not by isolating ourselves, but by being the most competitive producer.",
+                author: "Scott Sheffield, Former CEO of Pioneer Natural Resources"
+            },
+            {
+                text: "The shale revolution didn't just change America's energy future—it changed the world's.",
+                author: "Mark Papa, Former CEO of EOG Resources"
+            },
+            {
+                text: "In the energy business, you don't manage for the next quarter. You manage for the next quarter century.",
+                author: "Rex Tillerson, Former CEO of ExxonMobil"
+            },
+            {
+                text: "Midstream infrastructure is the unsung hero of the energy system—invisible but indispensable.",
+                author: "Rich Kinder, Executive Chairman of Kinder Morgan"
+            },
+            {
+                text: "The energy transition will require more investment in oil and gas, not less, to avoid supply crises.",
+                author: "Lorenzo Simonelli, CEO of Baker Hughes"
+            },
+            {
+                text: "Energy poverty is just as dangerous as climate change. We need solutions that address both.",
+                author: "Sultan Al Jaber, CEO of ADNOC"
+            }
+        ];
+
+        function getQuoteOfTheDay() {
+            const today = new Date();
+            const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
+            const quoteIndex = dayOfYear % QUOTES.length;
+            return QUOTES[quoteIndex];
+        }
+
+        function displayQuote() {
+            const quote = getQuoteOfTheDay();
+            document.getElementById('quote-text').textContent = `"${quote.text}"`;
+            document.getElementById('quote-author').textContent = `— ${quote.author}`;
+        }
+
+        displayQuote();
+
+        // ===== DEMO DATA =====
+        function getDemoEquities() {
+            const companies = [
+                // Integrated
+                { name: 'Exxon Mobil', ticker: 'XOM', price: 112.45, change: 2.34, changePercent: 2.04, marketCap: 450e9 },
+                { name: 'Chevron', ticker: 'CVX', price: 156.78, change: 0.49, changePercent: 0.31, marketCap: 290e9 },
+                { name: 'BP', ticker: 'BP', price: 33.67, change: 0.28, changePercent: 0.84, marketCap: 95e9 },
+                { name: 'Shell', ticker: 'SHEL', price: 68.45, change: 0.92, changePercent: 1.36, marketCap: 200e9 },
+                // Upstream
+                { name: 'ConocoPhillips', ticker: 'COP', price: 109.23, change: 1.40, changePercent: 1.30, marketCap: 135e9 },
+                { name: 'EOG Resources', ticker: 'EOG', price: 123.67, change: 0.76, changePercent: 0.62, marketCap: 72e9 },
+                { name: 'Occidental Petroleum', ticker: 'OXY', price: 58.34, change: 0.87, changePercent: 1.52, marketCap: 52e9 },
+                { name: 'Devon Energy', ticker: 'DVN', price: 42.78, change: 0.34, changePercent: 0.80, marketCap: 27e9 },
+                { name: 'Diamondback Energy', ticker: 'FANG', price: 158.90, change: 4.50, changePercent: 2.91, marketCap: 28e9 },
+                { name: 'Marathon Oil', ticker: 'MRO', price: 28.45, change: -0.15, changePercent: -0.52, marketCap: 18e9 },
+                { name: 'APA Corp', ticker: 'APA', price: 34.56, change: 0.45, changePercent: 1.32, marketCap: 11e9 },
+                { name: 'Coterra Energy', ticker: 'CTRA', price: 26.78, change: 0.28, changePercent: 1.06, marketCap: 19e9 },
+                { name: 'Hess Corp', ticker: 'HES', price: 145.23, change: 1.89, changePercent: 1.32, marketCap: 45e9 },
+                { name: 'Diamondback', ticker: 'DINO', price: 52.34, change: 0.67, changePercent: 1.30, marketCap: 9e9 },
+                { name: 'EQT Corp', ticker: 'EQT', price: 38.92, change: 0.58, changePercent: 1.51, marketCap: 13e9 },
+                { name: 'Texas Pacific Land', ticker: 'TPL', price: 1234.56, change: 15.23, changePercent: 1.25, marketCap: 25e9 },
+                // Midstream
+                { name: 'Williams Companies', ticker: 'WMB', price: 45.67, change: 0.54, changePercent: 1.21, marketCap: 56e9 },
+                { name: 'Kinder Morgan', ticker: 'KMI', price: 22.45, change: 0.26, changePercent: 1.19, marketCap: 50e9 },
+                { name: 'ONEOK', ticker: 'OKE', price: 89.23, change: 0.63, changePercent: 0.71, marketCap: 48e9 },
+                { name: 'Targa Resources', ticker: 'TRGP', price: 156.34, change: 1.24, changePercent: 0.80, marketCap: 35e9 },
+                { name: 'Cheniere Energy', ticker: 'LNG', price: 189.45, change: 2.34, changePercent: 1.25, marketCap: 42e9 },
+                { name: 'Enbridge', ticker: 'ENB', price: 41.23, change: 0.45, changePercent: 1.10, marketCap: 85e9 },
+                { name: 'TC Energy', ticker: 'TRP', price: 52.89, change: 0.67, changePercent: 1.28, marketCap: 52e9 },
+                // Downstream
+                { name: 'Marathon Petroleum', ticker: 'MPC', price: 167.89, change: 0.45, changePercent: 0.27, marketCap: 58e9 },
+                { name: 'Phillips 66', ticker: 'PSX', price: 132.34, change: 0.46, changePercent: 0.35, marketCap: 55e9 },
+                { name: 'Valero Energy', ticker: 'VLO', price: 143.56, change: -1.52, changePercent: -1.05, marketCap: 48e9 },
+                // Services
+                { name: 'Schlumberger', ticker: 'SLB', price: 45.67, change: 0.61, changePercent: 1.35, marketCap: 65e9 },
+                { name: 'Baker Hughes', ticker: 'BKR', price: 31.45, change: 0.35, changePercent: 1.13, marketCap: 30e9 },
+                { name: 'Halliburton', ticker: 'HAL', price: 34.56, change: 0.28, changePercent: 0.82, marketCap: 31e9 }
+            ];
+            return companies;
+        }
+
+        function getDemoPrices() {
+            return [
+                {
+                    symbol: 'CL=F',
+                    name: 'WTI Crude Oil',
+                    unit: 'USD/bbl',
+                    price: 76.45,
+                    change: 1.23,
+                    changePercent: 1.64,
+                    sparklineData: [74.5, 74.8, 75.2, 75.0, 75.6, 76.1, 75.8, 76.2, 76.0, 76.45]
+                },
+                {
+                    symbol: 'NG=F',
+                    name: 'Natural Gas',
+                    unit: 'USD/MMBtu',
+                    price: 3.42,
+                    change: -0.08,
+                    changePercent: -2.29,
+                    sparklineData: [3.52, 3.48, 3.50, 3.45, 3.47, 3.44, 3.40, 3.43, 3.41, 3.42]
+                },
+                {
+                    symbol: 'RB=F',
+                    name: 'RBOB Gasoline',
+                    unit: 'USD/gal',
+                    price: 2.18,
+                    change: 0.03,
+                    changePercent: 1.40,
+                    sparklineData: [2.14, 2.15, 2.13, 2.16, 2.17, 2.15, 2.16, 2.17, 2.19, 2.18]
+                }
+            ];
+        }
+
+        function getDemoNews() {
+            return [
+                {
+                    headline: 'OPEC+ Extends Production Cuts Through Q2 2025',
+                    url: 'https://www.reuters.com/markets/commodities/opec-production-cuts-2025',
+                    source: 'Reuters',
+                    publishedAt: new Date(Date.now() - 2 * 3600000).toISOString(),
+                    summary: 'OPEC+ alliance agrees to maintain current production quotas of 2 million barrels per day cut. Decision driven by concerns over demand growth and inventory builds. Brent crude rises 2.3% on the news.'
+                },
+                {
+                    headline: 'Chevron Reports Record Q4 Earnings on LNG Exports',
+                    url: 'https://www.wsj.com/articles/chevron-q4-earnings-lng-2025',
+                    source: 'Wall Street Journal',
+                    publishedAt: new Date(Date.now() - 5 * 3600000).toISOString(),
+                    summary: 'CVX beats estimates with $6.5B quarterly profit. LNG division revenues up 34% year-over-year. Company announces $2B share buyback expansion and raises dividend by 8%.'
+                },
+                {
+                    headline: 'Permian Basin Output Hits All-Time High Despite Rig Count Decline',
+                    url: 'https://www.bloomberg.com/news/permian-production-record-2025',
+                    source: 'Bloomberg',
+                    publishedAt: new Date(Date.now() - 8 * 3600000).toISOString(),
+                    summary: 'Shale producers achieve efficiency gains through advanced drilling techniques. Daily production reaches 6.2 million barrels. Industry consolidation and technology improvements drive productivity per well.'
+                },
+                {
+                    headline: 'Natural Gas Prices Tumble on Warm Winter Weather Forecast',
+                    url: 'https://www.cnbc.com/2025/natural-gas-prices-weather',
+                    source: 'CNBC',
+                    publishedAt: new Date(Date.now() - 12 * 3600000).toISOString(),
+                    summary: 'Henry Hub futures drop 4.2% as NOAA predicts above-average temperatures across Northeast. Storage levels remain 15% above five-year average. Traders shift focus to shoulder season demand dynamics.'
+                },
+                {
+                    headline: 'ExxonMobil Acquires Lithium Mining Assets in $2.5B Deal',
+                    url: 'https://www.ft.com/content/exxonmobil-lithium-acquisition-2025',
+                    source: 'Financial Times',
+                    publishedAt: new Date(Date.now() - 18 * 3600000).toISOString(),
+                    summary: 'XOM diversifies into battery metals amid energy transition. Arkansas-based lithium reserves estimated at 3 million metric tons. Deal positions company for EV supply chain integration and potential synergies with refining operations.'
+                },
+                {
+                    headline: 'Refinery Margins Compress as Crack Spreads Narrow',
+                    url: 'https://rbnenergy.com/refinery-margins-compress-2025',
+                    source: 'RBN Energy',
+                    publishedAt: new Date(Date.now() - 20 * 3600000).toISOString(),
+                    summary: 'Gulf Coast 3-2-1 crack spread falls to $18/bbl from $25/bbl last month. Diesel inventories build amid slower industrial activity. Refiners may cut utilization rates if margins remain pressured.'
+                },
+                {
+                    headline: 'Discussion: Major Pipeline Expansion Projects Delayed by Permitting',
+                    url: 'https://www.reddit.com/r/energy/comments/pipeline_delays_2025',
+                    source: 'Reddit r/energy',
+                    publishedAt: new Date(Date.now() - 22 * 3600000).toISOString(),
+                    summary: 'Community analyzes impacts of regulatory delays on Midwest-to-Gulf Coast natural gas capacity. Environmental reviews extend timelines by 18+ months. Industry advocates push for streamlined federal approval process.'
+                }
+            ];
+        }
+
+        // ===== FETCH EQUITIES =====
+        async function fetchEquitiesFromYahoo() {
+            const tickers = CONFIG.fallbackTickers.join(',');
+            const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tickers}`;
+
+            try {
+                const response = await fetchWithTimeout(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                const quotes = data.quoteResponse.result;
+                log('Fetched equities from Yahoo Finance:', quotes.length);
+
+                return quotes.map(item => ({
+                    name: item.longName || item.shortName || item.symbol,
+                    ticker: item.symbol,
+                    price: item.regularMarketPrice || item.price,
+                    change: item.regularMarketChange || (item.regularMarketPrice - item.regularMarketPreviousClose),
+                    changePercent: item.regularMarketChangePercent || ((item.regularMarketChange / item.regularMarketPreviousClose) * 100),
+                    marketCap: item.marketCap || 0
+                })).filter(item => item.marketCap > 0 && item.price);
+
+            } catch (error) {
+                log('Error fetching from Yahoo Finance:', error);
+                throw error;
+            }
+        }
+
+        async function fetchEquities() {
+            if (CONFIG.demoMode) {
+                log('Using demo equities data');
+                return getDemoEquities();
+            }
+
+            // Try Vercel backend first (recommended)
+            if (CONFIG.useBackend) {
+                const tickers = CONFIG.fallbackTickers.join(',');
+                const baseUrl = CONFIG.backendUrl || window.location.origin;
+                const url = `${baseUrl}/api/stocks?tickers=${tickers}`;
+
+                try {
+                    log('Fetching from backend:', url);
+                    const response = await fetchWithTimeout(url);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                    const data = await response.json();
+                    log('Fetched equities from backend:', data.length);
+
+                    const mapped = data.map(item => ({
+                        name: item.name || item.symbol,
+                        ticker: item.symbol,
+                        price: item.price,
+                        change: item.change,
+                        changePercent: item.changesPercentage,
+                        marketCap: item.marketCap
+                    })).filter(item => item.marketCap > 0);
+
+                    if (mapped.length > 0) return mapped;
+
+                } catch (error) {
+                    log('Backend API failed, trying direct API call:', error);
+                }
+            }
+
+            // Try Financial Modeling Prep directly
+            if (CONFIG.apiKeys.fmpKey) {
+                const tickers = CONFIG.fallbackTickers.join(',');
+                let url = `https://financialmodelingprep.com/api/v3/quote/${tickers}?apikey=${CONFIG.apiKeys.fmpKey}`;
+
+                // Use CORS proxy if enabled
+                if (CONFIG.useCorsProxy) {
+                    url = CONFIG.corsProxyUrl + encodeURIComponent(url);
+                    log('Using CORS proxy for FMP request');
+                }
+
+                try {
+                    const response = await fetchWithTimeout(url);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                    const data = await response.json();
+                    log('Fetched equities from FMP:', data.length);
+
+                    const mapped = data.map(item => ({
+                        name: item.name || item.symbol,
+                        ticker: item.symbol,
+                        price: item.price,
+                        change: item.change,
+                        changePercent: item.changesPercentage,
+                        marketCap: item.marketCap
+                    })).filter(item => item.marketCap > 0);
+
+                    if (mapped.length > 0) return mapped;
+
+                } catch (error) {
+                    log('FMP API failed, trying Yahoo Finance fallback:', error);
+                }
+            }
+
+            // Try Yahoo Finance as fallback
+            try {
+                return await fetchEquitiesFromYahoo();
+            } catch (error) {
+                log('Yahoo Finance failed, using demo data:', error);
+                return getDemoEquities();
+            }
+        }
+
+        // ===== FETCH COMMODITIES =====
+        async function fetchCommoditiesFromYahoo() {
+            const symbols = CONFIG.energySymbols.map(s => s.symbol).join(',');
+            const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}`;
+
+            try {
+                const response = await fetchWithTimeout(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                const quotes = data.quoteResponse.result;
+                log('Fetched commodities from Yahoo Finance:', quotes.length);
+
+                const results = [];
+                for (const item of quotes) {
+                    const config = CONFIG.energySymbols.find(s => s.symbol === item.symbol);
+                    if (!config) continue;
+
+                    const price = item.regularMarketPrice || item.price;
+                    const change = item.regularMarketChange || 0;
+                    const changePercent = item.regularMarketChangePercent || 0;
+
+                    results.push({
+                        symbol: item.symbol,
+                        name: config.name,
+                        unit: config.unit,
+                        price: price,
+                        change: change,
+                        changePercent: changePercent,
+                        sparklineData: generateMockSparkline(price, change)
+                    });
+                }
+
+                return results;
+
+            } catch (error) {
+                log('Error fetching commodities from Yahoo Finance:', error);
+                throw error;
+            }
+        }
+
+        async function fetchCommodities() {
+            if (CONFIG.demoMode) {
+                log('Using demo commodity data');
+                return getDemoPrices();
+            }
+
+            // Try Vercel backend first (recommended)
+            if (CONFIG.useBackend) {
+                const symbols = CONFIG.energySymbols.map(s => s.symbol).join(',');
+                const baseUrl = CONFIG.backendUrl || window.location.origin;
+                const url = `${baseUrl}/api/commodities?symbols=${symbols}`;
+
+                try {
+                    log('Fetching commodities from backend:', url);
+                    const response = await fetchWithTimeout(url);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                    const data = await response.json();
+                    log('Fetched commodities from backend:', data.length);
+
+                    const results = [];
+                    for (const item of data) {
+                        const config = CONFIG.energySymbols.find(s => s.symbol === item.symbol);
+                        results.push({
+                            symbol: item.symbol,
+                            name: config.name,
+                            unit: config.unit,
+                            price: item.price,
+                            change: item.change,
+                            changePercent: item.changesPercentage,
+                            sparklineData: generateMockSparkline(item.price, item.change)
+                        });
+                    }
+
+                    if (results.length > 0) return results;
+
+                } catch (error) {
+                    log('Backend API failed for commodities, trying direct API call:', error);
+                }
+            }
+
+            // Try Financial Modeling Prep directly
+            if (CONFIG.apiKeys.fmpKey) {
+                const symbols = CONFIG.energySymbols.map(s => s.symbol).join(',');
+                let url = `https://financialmodelingprep.com/api/v3/quote/${symbols}?apikey=${CONFIG.apiKeys.fmpKey}`;
+
+                // Use CORS proxy if enabled
+                if (CONFIG.useCorsProxy) {
+                    url = CONFIG.corsProxyUrl + encodeURIComponent(url);
+                    log('Using CORS proxy for FMP commodities request');
+                }
+
+                try {
+                    const response = await fetchWithTimeout(url);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                    const data = await response.json();
+                    log('Fetched commodities from FMP:', data.length);
+
+                    const results = [];
+                    for (const item of data) {
+                        const config = CONFIG.energySymbols.find(s => s.symbol === item.symbol);
+                        results.push({
+                            symbol: item.symbol,
+                            name: config.name,
+                            unit: config.unit,
+                            price: item.price,
+                            change: item.change,
+                            changePercent: item.changesPercentage,
+                            sparklineData: generateMockSparkline(item.price, item.change)
+                        });
+                    }
+
+                    if (results.length > 0) return results;
+
+                } catch (error) {
+                    log('FMP API failed for commodities, trying Yahoo Finance fallback:', error);
+                }
+            }
+
+            // Try Yahoo Finance as fallback
+            try {
+                return await fetchCommoditiesFromYahoo();
+            } catch (error) {
+                log('Yahoo Finance failed for commodities, using demo data:', error);
+                return getDemoPrices();
+            }
+        }
+
+        function generateMockSparkline(currentPrice, change) {
+            const points = 10;
+            const data = [];
+            const startPrice = currentPrice - change;
+
+            for (let i = 0; i < points; i++) {
+                const progress = i / (points - 1);
+                const randomVariation = (Math.random() - 0.5) * Math.abs(change) * 0.5;
+                const price = startPrice + (change * progress) + randomVariation;
+                data.push(price);
+            }
+
+            data[data.length - 1] = currentPrice;
+            return data;
+        }
+
+        // ===== FETCH NEWS =====
+        async function fetchNews() {
+            if (CONFIG.demoMode) {
+                log('Using demo news data');
+                return getDemoNews();
+            }
+
+            const stories = [];
+
+            // Try GDELT
+            try {
+                const gdeltStories = await fetchGDELT();
+                stories.push(...gdeltStories);
+            } catch (error) {
+                log('GDELT fetch failed:', error);
+            }
+
+            // Try Reddit
+            try {
+                const redditStories = await fetchReddit();
+                stories.push(...redditStories);
+            } catch (error) {
+                log('Reddit fetch failed:', error);
+            }
+
+            if (stories.length === 0) {
+                log('All news sources failed, using demo data');
+                return getDemoNews();
+            }
+
+            // Score, dedupe, and select top stories
+            const scored = scoreStories(stories);
+            const deduped = dedupeStories(scored);
+            return deduped.slice(0, 7);
+        }
+
+        async function fetchGDELT() {
+            const keywords = 'oil gas energy OPEC crude petroleum LNG refinery pipeline';
+            const timespan = '24h';
+            const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(keywords)}&mode=artlist&maxrecords=20&timespan=${timespan}&format=json`;
+
+            const response = await fetchWithTimeout(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const data = await response.json();
+            log('GDELT results:', data.articles?.length || 0);
+
+            return (data.articles || []).map(article => ({
+                headline: article.title,
+                url: article.url,
+                source: extractDomain(article.url),
+                publishedAt: article.seendate,
+                summary: article.title // GDELT doesn't provide summaries
+            }));
+        }
+
+        async function fetchReddit() {
+            const subreddits = ['energy', 'oil', 'commodities'];
+            const stories = [];
+
+            for (const sub of subreddits) {
+                try {
+                    const url = `https://www.reddit.com/r/${sub}/hot.json?limit=10`;
+                    const response = await fetchWithTimeout(url);
+                    if (!response.ok) continue;
+
+                    const data = await response.json();
+                    const posts = data.data.children;
+
+                    for (const post of posts) {
+                        const p = post.data;
+                        const age = Date.now() / 1000 - p.created_utc;
+                        if (age > 86400) continue; // Skip if older than 24h
+
+                        stories.push({
+                            headline: p.title,
+                            url: p.url.startsWith('http') ? p.url : `https://reddit.com${p.permalink}`,
+                            source: `Reddit r/${sub}`,
+                            publishedAt: new Date(p.created_utc * 1000).toISOString(),
+                            summary: p.selftext?.substring(0, 200) || p.title
+                        });
+                    }
+                } catch (error) {
+                    log(`Reddit r/${sub} failed:`, error);
+                }
+            }
+
+            return stories;
+        }
+
+        function extractDomain(url) {
+            try {
+                const hostname = new URL(url).hostname;
+                return hostname.replace('www.', '');
+            } catch {
+                return 'Unknown';
+            }
+        }
+
+        function scoreStories(stories) {
+            const keywords = [
+                'OPEC', 'WTI', 'LNG', 'refinery', 'shale', 'Permian', 'pipeline',
+                'sanctions', 'production', 'earnings', 'acquisition', 'merger',
+                'regulation', 'Exxon', 'Chevron', 'XOM', 'CVX', 'crude', 'natural gas'
+            ];
+
+            const trustedDomains = [
+                'reuters.com', 'bloomberg.com', 'wsj.com', 'ft.com', 'cnbc.com',
+                'rbnenergy.com', 'hartenergy.com', 'apnews.com'
+            ];
+
+            return stories.map(story => {
+                let score = 0;
+
+                // Recency
+                const age = Date.now() - new Date(story.publishedAt).getTime();
+                const ageHours = age / (1000 * 60 * 60);
+                if (ageHours < 6) score += 10;
+                else if (ageHours < 12) score += 7;
+                else if (ageHours < 24) score += 5;
+                else score += 2;
+
+                // Domain authority
+                const domain = extractDomain(story.url);
+                if (trustedDomains.some(d => domain.includes(d))) score += 8;
+
+                // Keyword relevance
+                const text = `${story.headline} ${story.summary}`.toLowerCase();
+                keywords.forEach(kw => {
+                    if (text.includes(kw.toLowerCase())) score += 2;
+                });
+
+                return { ...story, score };
+            }).sort((a, b) => b.score - a.score);
+        }
+
+        function dedupeStories(stories) {
+            const seen = new Set();
+            const unique = [];
+
+            for (const story of stories) {
+                const normalized = story.headline.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (seen.has(normalized)) continue;
+                if (seen.has(story.url)) continue;
+
+                seen.add(normalized);
+                seen.add(story.url);
+                unique.push(story);
+            }
+
+            return unique;
+        }
+
+        // ===== BALANCED TREEMAP LAYOUT =====
+        // Use market cap as a guideline, but ensure all companies are visible
+        function balancedSquarify(data, x, y, width, height) {
+            if (data.length === 0) return [];
+
+            // Sort by value descending to get better layout
+            const sorted = [...data].sort((a, b) => b.value - a.value);
+
+            // Apply balanced weighting with minimum visibility
+            const minWeight = 0.25; // Minimum relative weight (25% of average)
+            const avgValue = sorted.reduce((sum, d) => sum + d.value, 0) / sorted.length;
+            const minValue = avgValue * minWeight;
+
+            // Adjust values: use sqrt to compress the range while maintaining relative order
+            const balanced = sorted.map(d => {
+                // Apply square root to compress differences
+                const sqrtValue = Math.sqrt(d.value);
+                // Ensure minimum size
+                const adjustedValue = Math.max(sqrtValue, Math.sqrt(minValue));
+                return { ...d, value: adjustedValue };
+            });
+
+            return squarify(balanced, x, y, width, height);
+        }
+
+        function squarify(data, x, y, width, height) {
+            if (data.length === 0) return [];
+
+            const total = data.reduce((sum, d) => sum + d.value, 0);
+            if (total === 0) return [];
+
+            const normalized = data.map(d => ({
+                ...d,
+                normalizedValue: d.value / total * width * height
+            }));
+
+            const result = [];
+            layoutSquarified(normalized, x, y, width, height, result);
+            return result;
+        }
+
+        function layoutSquarified(data, x, y, width, height, result) {
+            if (data.length === 0) return;
+
+            const isHorizontal = width >= height;
+            const total = data.reduce((sum, d) => sum + d.normalizedValue, 0);
+            const areaPerValue = (width * height) / total;
+
+            if (data.length === 1) {
+                result.push({
+                    ...data[0],
+                    x, y, width, height
+                });
+                return;
+            }
+
+            const row = [data[0]];
+            let remaining = data.slice(1);
+            let rowArea = data[0].normalizedValue * areaPerValue;
+
+            while (remaining.length > 0) {
+                const next = remaining[0];
+                const nextArea = next.normalizedValue * areaPerValue;
+
+                if (improveAspectRatio(row, rowArea, nextArea, width, height, isHorizontal)) {
+                    row.push(next);
+                    rowArea += nextArea;
+                    remaining = remaining.slice(1);
+                } else {
+                    break;
+                }
+            }
+
+            // Layout the row
+            const rowSize = isHorizontal ? rowArea / height : rowArea / width;
+            let offset = isHorizontal ? x : y;
+
+            for (const item of row) {
+                const itemArea = item.normalizedValue * areaPerValue;
+                const itemSize = itemArea / rowSize;
+
+                if (isHorizontal) {
+                    result.push({
+                        ...item,
+                        x: offset,
+                        y: y,
+                        width: itemSize,
+                        height: rowSize
+                    });
+                    offset += itemSize;
+                } else {
+                    result.push({
+                        ...item,
+                        x: x,
+                        y: offset,
+                        width: rowSize,
+                        height: itemSize
+                    });
+                    offset += itemSize;
+                }
+            }
+
+            // Recurse on remaining
+            if (remaining.length > 0) {
+                if (isHorizontal) {
+                    layoutSquarified(remaining, x, y + rowSize, width, height - rowSize, result);
+                } else {
+                    layoutSquarified(remaining, x + rowSize, y, width - rowSize, height, result);
+                }
+            }
+        }
+
+        function improveAspectRatio(row, rowArea, nextArea, width, height, isHorizontal) {
+            if (row.length === 0) return true;
+
+            const currentWorst = worstAspectRatio(row, rowArea, width, height, isHorizontal);
+            const newWorst = worstAspectRatio([...row], rowArea + nextArea, width, height, isHorizontal);
+
+            return newWorst <= currentWorst;
+        }
+
+        function worstAspectRatio(row, rowArea, width, height, isHorizontal) {
+            const rowSize = isHorizontal ? rowArea / height : rowArea / width;
+            if (rowSize === 0) return Infinity;
+
+            let worst = 0;
+            for (const item of row) {
+                const itemSize = item.normalizedValue / rowSize;
+                const aspect = isHorizontal
+                    ? Math.max(itemSize / rowSize, rowSize / itemSize)
+                    : Math.max(rowSize / itemSize, itemSize / rowSize);
+                worst = Math.max(worst, aspect);
+            }
+            return worst;
+        }
+
+        // ===== RENDER TREEMAP =====
+        function renderTreemap(companies) {
+            const container = document.createElement('div');
+            container.className = 'treemap-container';
+            container.id = 'treemap';
+
+            const rect = { width: 1000, height: 600 };
+
+            // Group companies by subsector
+            const groups = {};
+            for (const [subsector, tickers] of Object.entries(CONFIG.subsectors)) {
+                groups[subsector] = companies.filter(c => tickers.includes(c.ticker));
+            }
+
+            // Calculate row heights based on company count
+            const subsectorOrder = ['Integrated', 'Upstream', 'Midstream', 'Downstream', 'Services'];
+            const totalCompanies = companies.length;
+
+            let currentY = 0;
+
+            subsectorOrder.forEach(subsector => {
+                const subsectorCompanies = groups[subsector];
+                if (!subsectorCompanies || subsectorCompanies.length === 0) return;
+
+                // Allocate height proportional to company count (with slight boost for visual balance)
+                const rowHeight = (subsectorCompanies.length / totalCompanies) * rect.height;
+
+                // Create row container
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'treemap-group';
+                rowDiv.style.left = '0%';
+                rowDiv.style.top = `${(currentY / rect.height) * 100}%`;
+                rowDiv.style.width = '100%';
+                rowDiv.style.height = `${(rowHeight / rect.height) * 100}%`;
+
+                // Subsector label
+                const label = document.createElement('div');
+                label.className = 'treemap-group-label';
+                label.textContent = subsector;
+                rowDiv.appendChild(label);
+
+                // Apply balanced weighting to companies
+                const minWeight = 0.4; // Minimum relative weight
+                const avgValue = subsectorCompanies.reduce((sum, c) => sum + c.marketCap, 0) / subsectorCompanies.length;
+                const minValue = avgValue * minWeight;
+
+                // Balance market caps with sqrt compression
+                const balancedCompanies = subsectorCompanies.map(c => ({
+                    ...c,
+                    balancedValue: Math.max(Math.sqrt(c.marketCap), Math.sqrt(minValue))
+                }));
+
+                const totalBalancedValue = balancedCompanies.reduce((sum, c) => sum + c.balancedValue, 0);
+
+                // Layout companies horizontally (left to right)
+                let currentX = 0;
+                balancedCompanies.forEach(company => {
+                    const div = document.createElement('div');
+                    div.className = 'treemap-cell';
+
+                    // Calculate width based on balanced market cap
+                    const cellWidth = (company.balancedValue / totalBalancedValue) * rect.width;
+                    const cellWidthPercent = (cellWidth / rect.width) * 100;
+                    const cellHeightPercent = 100; // Full height of row
+
+                    const isSmall = cellWidthPercent < 5;
+                    if (isSmall) {
+                        div.classList.add('treemap-cell-small');
+                    }
+
+                    div.style.left = `${(currentX / rect.width) * 100}%`;
+                    div.style.top = '0%';
+                    div.style.width = `${cellWidthPercent}%`;
+                    div.style.height = '100%';
+                    div.style.backgroundColor = getHeatmapColor(company.changePercent);
+                    div.style.color = Math.abs(company.changePercent) > 1.5 ? 'white' : 'rgba(0,0,0,0.85)';
+
+                    const ticker = document.createElement('div');
+                    ticker.className = 'treemap-cell-ticker';
+                    ticker.textContent = company.ticker;
+
+                    const change = document.createElement('div');
+                    change.className = 'treemap-cell-change';
+                    change.textContent = formatPercent(company.changePercent);
+
+                    div.appendChild(ticker);
+
+                    // Show name if cell is reasonably large
+                    if (cellWidthPercent > 5) {
+                        const name = document.createElement('div');
+                        name.className = 'treemap-cell-name';
+                        name.textContent = company.name;
+                        div.appendChild(name);
+                    }
+
+                    div.appendChild(change);
+
+                    div.title = `${company.name} (${company.ticker})\n${subsector}\nPrice: $${formatNumber(company.price)}\nChange: ${formatPercent(company.changePercent)}\nMarket Cap: ${formatMarketCap(company.marketCap)}`;
+
+                    div.onclick = () => {
+                        window.open(`https://finance.yahoo.com/quote/${company.ticker}`, '_blank', 'noopener,noreferrer');
+                    };
+
+                    rowDiv.appendChild(div);
+                    currentX += cellWidth;
+                });
+
+                container.appendChild(rowDiv);
+                currentY += rowHeight;
+            });
+
+            // Legend
+            const legend = document.createElement('div');
+            legend.className = 'treemap-legend';
+
+            const gradientDiv = document.createElement('div');
+            gradientDiv.className = 'legend-gradient';
+
+            for (let i = -5; i <= 5; i += 0.5) {
+                const seg = document.createElement('div');
+                seg.className = 'legend-gradient-segment';
+                seg.style.backgroundColor = getHeatmapColor(i);
+                gradientDiv.appendChild(seg);
+            }
+
+            const labels = document.createElement('div');
+            labels.className = 'legend-labels';
+            labels.innerHTML = '<span>-5%</span><span>0%</span><span>+5%</span>';
+
+            legend.appendChild(gradientDiv);
+            legend.appendChild(labels);
+
+            const wrapper = document.createElement('div');
+            wrapper.appendChild(container);
+            wrapper.appendChild(legend);
+
+            return wrapper;
+        }
+
+        // ===== RENDER PRICES =====
+        function renderPrices(prices) {
+            const grid = document.createElement('div');
+            grid.className = 'prices-grid';
+
+            prices.forEach(price => {
+                const card = document.createElement('div');
+                card.className = 'price-card';
+
+                const header = document.createElement('div');
+                header.className = 'price-header';
+                header.textContent = price.name;
+
+                const value = document.createElement('div');
+                value.className = 'price-value';
+                value.textContent = `$${formatNumber(price.price)}`;
+
+                const change = document.createElement('div');
+                change.className = 'price-change';
+                change.style.color = getChangeColor(price.change);
+                change.textContent = `${price.change >= 0 ? '+' : ''}${formatNumber(price.change)} (${formatPercent(price.changePercent)})`;
+
+                const meta = document.createElement('div');
+                meta.className = 'price-meta';
+                meta.textContent = `${price.unit} · Prices may be delayed up to 15 minutes`;
+
+                const canvas = document.createElement('canvas');
+                canvas.className = 'price-sparkline';
+                canvas.width = 300;
+                canvas.height = 60;
+
+                card.appendChild(header);
+                card.appendChild(value);
+                card.appendChild(change);
+                card.appendChild(meta);
+                card.appendChild(canvas);
+
+                grid.appendChild(card);
+
+                // Draw sparkline
+                setTimeout(() => drawSparkline(canvas, price.sparklineData, price.change >= 0), 0);
+            });
+
+            return grid;
+        }
+
+        function drawSparkline(canvas, data, positive) {
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 5;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            const range = max - min || 1;
+
+            const stepX = (width - padding * 2) / (data.length - 1);
+
+            ctx.beginPath();
+            ctx.strokeStyle = positive ? 'var(--color-positive)' : 'var(--color-negative)';
+            ctx.lineWidth = 2;
+
+            data.forEach((value, i) => {
+                const x = padding + i * stepX;
+                const y = height - padding - ((value - min) / range) * (height - padding * 2);
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+
+            ctx.stroke();
+        }
+
+        // ===== RENDER NEWS =====
+        function renderNews(stories) {
+            const grid = document.createElement('div');
+            grid.className = 'news-grid';
+
+            stories.forEach(story => {
+                const card = document.createElement('div');
+                card.className = 'news-card';
+
+                const headline = document.createElement('div');
+                headline.className = 'news-headline';
+                const link = document.createElement('a');
+                link.href = story.url;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = story.headline;
+                headline.appendChild(link);
+
+                const printUrl = document.createElement('div');
+                printUrl.className = 'print-url';
+                printUrl.textContent = story.url;
+                headline.appendChild(printUrl);
+
+                const meta = document.createElement('div');
+                meta.className = 'news-meta';
+
+                const source = document.createElement('span');
+                source.className = 'news-source';
+                source.textContent = story.source;
+
+                const time = document.createElement('span');
+                const date = new Date(story.publishedAt);
+                time.textContent = `${timeAgo(story.publishedAt)} · ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+
+                meta.appendChild(source);
+                meta.appendChild(document.createTextNode(' · '));
+                meta.appendChild(time);
+
+                const summary = document.createElement('div');
+                summary.className = 'news-summary';
+                summary.textContent = story.summary;
+
+                const linkDiv = document.createElement('div');
+                linkDiv.className = 'news-link';
+                const urlLink = document.createElement('a');
+                urlLink.href = story.url;
+                urlLink.target = '_blank';
+                urlLink.rel = 'noopener noreferrer';
+                urlLink.textContent = story.url;
+                linkDiv.appendChild(urlLink);
+
+                card.appendChild(headline);
+                card.appendChild(meta);
+                card.appendChild(summary);
+                card.appendChild(linkDiv);
+
+                grid.appendChild(card);
+            });
+
+            return grid;
+        }
+
+        // ===== MAIN GENERATE FUNCTION =====
+        async function generate() {
+            const btn = document.getElementById('generateBtn');
+            const content = document.getElementById('content');
+
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+
+            content.innerHTML = '';
+
+            if (CONFIG.demoMode) {
+                const banner = document.createElement('div');
+                banner.className = 'demo-banner';
+                banner.textContent = '📊 Demo Mode: Displaying sample data';
+                content.appendChild(banner);
+            }
+
+            // Section 1: Treemap
+            const treemapSection = document.createElement('section');
+            treemapSection.className = 'section';
+            treemapSection.innerHTML = `
+                <div class="section-header">
+                    <h2>📈 Market Performance</h2>
+                    <span class="timestamp" id="treemap-timestamp">Loading...</span>
+                </div>
+                <div class="loader"><div class="spinner"></div>Loading stock data...</div>
+            `;
+            content.appendChild(treemapSection);
+
+            // Section 2: Prices
+            const pricesSection = document.createElement('section');
+            pricesSection.className = 'section';
+            pricesSection.innerHTML = `
+                <div class="section-header">
+                    <h2>💰 Energy Prices</h2>
+                    <span class="timestamp" id="prices-timestamp">Loading...</span>
+                </div>
+                <div class="loader"><div class="spinner"></div>Loading commodity prices...</div>
+            `;
+            content.appendChild(pricesSection);
+
+            // Section 3: News
+            const newsSection = document.createElement('section');
+            newsSection.className = 'section';
+            newsSection.innerHTML = `
+                <div class="section-header">
+                    <h2>📰 Latest News & Analysis</h2>
+                    <span class="timestamp" id="news-timestamp">Loading...</span>
+                </div>
+                <div class="loader"><div class="spinner"></div>Loading news stories...</div>
+            `;
+            content.appendChild(newsSection);
+
+            // Fetch all data
+            try {
+                const [equities, commodities, news] = await Promise.all([
+                    fetchEquities(),
+                    fetchCommodities(),
+                    fetchNews()
+                ]);
+
+                // Render treemap
+                const treemapLoader = treemapSection.querySelector('.loader');
+                if (equities && equities.length > 0) {
+                    const treemap = renderTreemap(equities);
+                    treemapLoader.replaceWith(treemap);
+                    document.getElementById('treemap-timestamp').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                } else {
+                    treemapLoader.innerHTML = '<div class="error">Failed to load stock data</div>';
+                }
+
+                // Render prices
+                const pricesLoader = pricesSection.querySelector('.loader');
+                if (commodities && commodities.length > 0) {
+                    const prices = renderPrices(commodities);
+                    pricesLoader.replaceWith(prices);
+                    document.getElementById('prices-timestamp').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                } else {
+                    pricesLoader.innerHTML = '<div class="error">Failed to load commodity prices</div>';
+                }
+
+                // Render news
+                const newsLoader = newsSection.querySelector('.loader');
+                if (news && news.length > 0) {
+                    const newsGrid = renderNews(news);
+                    newsLoader.replaceWith(newsGrid);
+                    document.getElementById('news-timestamp').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                } else {
+                    newsLoader.innerHTML = '<div class="error">Failed to load news stories</div>';
+                }
+
+            } catch (error) {
+                log('Error during generation:', error);
+                content.innerHTML += '<div class="error">An error occurred while generating the newsletter. Please try again.</div>';
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Regenerate';
+        }
+    </script>
+</body>
+</html>
