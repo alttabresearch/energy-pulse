@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Pulse - Diagnostic Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #5D5CDE;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        button {
+            background: #5D5CDE;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 1rem;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .status.success {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+
+        .status.info {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+
+        .status.warning {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+        }
+
+        .step {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            border-left: 3px solid #e5e7eb;
+            padding-left: 1rem;
+        }
+
+        .step.active {
+            border-left-color: #5D5CDE;
+            background: #f3f4f6;
+        }
+
+        .step.complete {
+            border-left-color: #10b981;
+        }
+
+        .step.failed {
+            border-left-color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Energy Pulse Diagnostic Tool</h1>
+
+    <div class="card">
+        <h2>Current Configuration</h2>
+        <div id="config"></div>
+    </div>
+
+    <div class="card">
+        <h2>Backend API Tests</h2>
+        <button onclick="runDiagnostics()" id="testBtn">Run Diagnostic Tests</button>
+        <div id="results"></div>
+    </div>
+
+    <div class="card">
+        <h2>Console Logs</h2>
+        <pre id="logs"></pre>
+    </div>
+
+    <script>
+        const logs = [];
+
+        function log(message, data = null) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.push(logEntry);
+            if (data) {
+                logs.push(JSON.stringify(data, null, 2));
+            }
+            document.getElementById('logs').textContent = logs.join('\n');
+            console.log(message, data);
+        }
+
+        // Display configuration
+        const config = {
+            location: window.location.href,
+            origin: window.location.origin,
+            backendStocksUrl: `${window.location.origin}/api/stocks`,
+            backendCommoditiesUrl: `${window.location.origin}/api/commodities`
+        };
+
+        document.getElementById('config').innerHTML = `<pre>${JSON.stringify(config, null, 2)}</pre>`;
+
+        async function runDiagnostics() {
+            const btn = document.getElementById('testBtn');
+            const results = document.getElementById('results');
+
+            btn.disabled = true;
+            btn.textContent = 'Running tests...';
+            results.innerHTML = '';
+            logs.length = 0;
+
+            log('🔍 Starting diagnostic tests...');
+
+            // Test 1: Check if we can reach the stocks API
+            await testStocksAPI(results);
+
+            // Test 2: Check if we can reach the commodities API
+            await testCommoditiesAPI(results);
+
+            // Test 3: Check direct FMP API (will fail due to CORS, but shows the API key works)
+            await testDirectFMP(results);
+
+            btn.disabled = false;
+            btn.textContent = 'Run Diagnostic Tests Again';
+            log('✅ All diagnostic tests completed');
+        }
+
+        async function testStocksAPI(results) {
+            const step = document.createElement('div');
+            step.className = 'step active';
+            step.innerHTML = '1️⃣ Testing Stocks API...';
+            results.appendChild(step);
+
+            const url = `${window.location.origin}/api/stocks?tickers=XOM,CVX`;
+            log(`Testing stocks API: ${url}`);
+
+            try {
+                const response = await fetch(url);
+                const responseText = await response.text();
+
+                log(`Stocks API status: ${response.status}`);
+                log('Stocks API response:', responseText);
+
+                if (!response.ok) {
+                    step.className = 'step failed';
+                    step.innerHTML = `1️⃣ Stocks API: ❌ FAILED (HTTP ${response.status})`;
+
+                    const status = document.createElement('div');
+                    status.className = 'status error';
+
+                    if (response.status === 500) {
+                        try {
+                            const errorData = JSON.parse(responseText);
+                            if (errorData.error === 'API key not configured') {
+                                status.innerHTML = `❌ <strong>Environment variable missing!</strong>\n\nThe FMP_API_KEY is not set in Vercel.\n\n<strong>Fix:</strong>\n1. Go to your Vercel dashboard\n2. Select your project\n3. Go to Settings → Environment Variables\n4. Add: FMP_API_KEY = Uif0pFeo5v0faYler20n1Bc8WpkhrTMN\n5. Redeploy your project`;
+                            } else {
+                                status.textContent = `Error: ${errorData.error}\nMessage: ${errorData.message}`;
+                            }
+                        } catch {
+                            status.textContent = `HTTP 500 Error. Response:\n${responseText}`;
+                        }
+                    } else {
+                        status.textContent = `HTTP ${response.status} Error. Response:\n${responseText}`;
+                    }
+
+                    results.appendChild(status);
+                    return;
+                }
+
+                const data = JSON.parse(responseText);
+
+                if (Array.isArray(data) && data.length > 0) {
+                    step.className = 'step complete';
+                    step.innerHTML = `1️⃣ Stocks API: ✅ SUCCESS (${data.length} stocks retrieved)`;
+
+                    const status = document.createElement('div');
+                    status.className = 'status success';
+                    status.innerHTML = `✅ Backend is working correctly!\n\nSample data:\n${JSON.stringify(data[0], null, 2)}`;
+                    results.appendChild(status);
+                } else {
+                    step.className = 'step failed';
+                    step.innerHTML = `1️⃣ Stocks API: ⚠️ Empty response`;
+
+                    const status = document.createElement('div');
+                    status.className = 'status warning';
+                    status.textContent = `API returned successfully but with no data:\n${responseText}`;
+                    results.appendChild(status);
+                }
+
+            } catch (error) {
+                step.className = 'step failed';
+                step.innerHTML = `1️⃣ Stocks API: ❌ FAILED`;
+
+                log('Stocks API error:', error);
+
+                const status = document.createElement('div');
+                status.className = 'status error';
+                status.innerHTML = `❌ <strong>Network Error</strong>\n\nCould not connect to: ${url}\n\nError: ${error.message}\n\n<strong>Possible causes:</strong>\n• API endpoint not deployed\n• Network connectivity issue\n• CORS configuration problem`;
+                results.appendChild(status);
+            }
+        }
+
+        async function testCommoditiesAPI(results) {
+            const step = document.createElement('div');
+            step.className = 'step active';
+            step.innerHTML = '2️⃣ Testing Commodities API...';
+            results.appendChild(step);
+
+            const url = `${window.location.origin}/api/commodities?symbols=CL=F,NG=F`;
+            log(`Testing commodities API: ${url}`);
+
+            try {
+                const response = await fetch(url);
+                const responseText = await response.text();
+
+                log(`Commodities API status: ${response.status}`);
+                log('Commodities API response:', responseText);
+
+                if (!response.ok) {
+                    step.className = 'step failed';
+                    step.innerHTML = `2️⃣ Commodities API: ❌ FAILED (HTTP ${response.status})`;
+
+                    const status = document.createElement('div');
+                    status.className = 'status error';
+
+                    if (response.status === 500) {
+                        try {
+                            const errorData = JSON.parse(responseText);
+                            status.textContent = `Error: ${errorData.error}\nMessage: ${errorData.message || ''}`;
+                        } catch {
+                            status.textContent = `HTTP 500 Error. Response:\n${responseText}`;
+                        }
+                    } else {
+                        status.textContent = `HTTP ${response.status} Error. Response:\n${responseText}`;
+                    }
+
+                    results.appendChild(status);
+                    return;
+                }
+
+                const data = JSON.parse(responseText);
+
+                if (Array.isArray(data) && data.length > 0) {
+                    step.className = 'step complete';
+                    step.innerHTML = `2️⃣ Commodities API: ✅ SUCCESS (${data.length} commodities retrieved)`;
+
+                    const status = document.createElement('div');
+                    status.className = 'status success';
+                    status.innerHTML = `✅ Commodities API working!\n\nSample data:\n${JSON.stringify(data[0], null, 2)}`;
+                    results.appendChild(status);
+                } else {
+                    step.className = 'step failed';
+                    step.innerHTML = `2️⃣ Commodities API: ⚠️ Empty response`;
+
+                    const status = document.createElement('div');
+                    status.className = 'status warning';
+                    status.textContent = `API returned successfully but with no data:\n${responseText}`;
+                    results.appendChild(status);
+                }
+
+            } catch (error) {
+                step.className = 'step failed';
+                step.innerHTML = `2️⃣ Commodities API: ❌ FAILED`;
+
+                log('Commodities API error:', error);
+
+                const status = document.createElement('div');
+                status.className = 'status error';
+                status.innerHTML = `❌ Network Error: ${error.message}`;
+                results.appendChild(status);
+            }
+        }
+
+        async function testDirectFMP(results) {
+            const step = document.createElement('div');
+            step.className = 'step active';
+            step.innerHTML = '3️⃣ Testing Direct FMP API (will fail due to CORS - this is expected)...';
+            results.appendChild(step);
+
+            const url = `https://financialmodelingprep.com/api/v3/quote/XOM?apikey=Uif0pFeo5v0faYler20n1Bc8WpkhrTMN`;
+            log(`Testing direct FMP API: ${url}`);
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                log('Direct FMP API status:', response.status);
+                log('Direct FMP API response:', data);
+
+                step.className = 'step complete';
+                step.innerHTML = `3️⃣ Direct FMP API: ✅ Surprisingly worked! (This means CORS is not blocking)`;
+
+                const status = document.createElement('div');
+                status.className = 'status success';
+                status.innerHTML = `✅ Direct API call worked (unusual!)\n\nThis means your API key is valid and CORS is not blocking.\nYour backend should also work once the environment variable is set.`;
+                results.appendChild(status);
+
+            } catch (error) {
+                step.className = 'step complete';
+                step.innerHTML = `3️⃣ Direct FMP API: ❌ Failed as expected (CORS blocking)`;
+
+                log('Direct FMP API error (expected):', error);
+
+                const status = document.createElement('div');
+                status.className = 'status info';
+                status.innerHTML = `ℹ️ <strong>This is EXPECTED behavior</strong>\n\nDirect API calls fail due to CORS (Cross-Origin Resource Sharing) restrictions.\nThis is why we need the Vercel backend.\n\nError: ${error.message}`;
+                results.appendChild(status);
+            }
+        }
+
+        // Auto-run on load
+        log('Page loaded, ready for diagnostics');
+    </script>
+</body>
+</html>
