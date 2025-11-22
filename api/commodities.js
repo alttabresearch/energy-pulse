@@ -1,5 +1,5 @@
 // Vercel Serverless Function for Commodity/Energy Price Data
-// This function runs on the server and bypasses CORS
+// Uses Yahoo Finance (free, no API key needed)
 
 export default async function handler(request, response) {
   // Set CORS headers to allow browser access
@@ -20,30 +20,35 @@ export default async function handler(request, response) {
     return response.status(400).json({ error: 'Missing symbols parameter' });
   }
 
-  // Get API key from environment variable (set in Vercel dashboard)
-  const API_KEY = process.env.FMP_API_KEY;
-
-  if (!API_KEY) {
-    return response.status(500).json({ error: 'API key not configured' });
-  }
-
-  const url = `https://financialmodelingprep.com/api/v3/quote/${symbols}?apikey=${API_KEY}`;
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}`;
 
   try {
     const apiResponse = await fetch(url);
 
     if (!apiResponse.ok) {
-      throw new Error(`FMP API returned ${apiResponse.status}`);
+      throw new Error(`Yahoo Finance returned ${apiResponse.status}`);
     }
 
     const data = await apiResponse.json();
+    const quotes = data.quoteResponse.result;
+
+    // Convert Yahoo Finance format to FMP-like format for compatibility
+    const converted = quotes.map(item => ({
+      symbol: item.symbol,
+      name: item.longName || item.shortName || item.symbol,
+      price: item.regularMarketPrice || 0,
+      change: item.regularMarketChange || 0,
+      changesPercentage: item.regularMarketChangePercent || 0,
+      marketCap: item.marketCap || 0,
+      previousClose: item.regularMarketPreviousClose || 0
+    }));
 
     // Return the data to the browser
     response.setHeader('Content-Type', 'application/json');
-    response.status(200).json(data);
+    response.status(200).json(converted);
 
   } catch (error) {
-    console.error('Error fetching from FMP:', error);
+    console.error('Error fetching from Yahoo Finance:', error);
     response.status(500).json({
       error: 'Failed to fetch commodity data',
       message: error.message
