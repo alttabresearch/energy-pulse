@@ -1,5 +1,5 @@
 // Vercel Serverless Function for Stock Data
-// Uses Yahoo Finance (free, no API key needed)
+// Uses Twelve Data API (free tier, 800 calls/day)
 
 export default async function handler(request, response) {
   // Set CORS headers to allow browser access
@@ -20,44 +20,72 @@ export default async function handler(request, response) {
     return response.status(400).json({ error: 'Missing tickers parameter' });
   }
 
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tickers}`;
+  // Get API key from environment variable
+  const API_KEY = process.env.TWELVE_DATA_API_KEY;
+
+  if (!API_KEY) {
+    return response.status(500).json({ error: 'API key not configured' });
+  }
 
   try {
-    // Add headers to make request look like it's from a browser
-    const apiResponse = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': 'https://finance.yahoo.com/',
-        'Origin': 'https://finance.yahoo.com'
+    const tickerArray = tickers.split(',');
+    const results = [];
+
+    // Twelve Data allows batch requests with comma-separated symbols
+    const batchSize = 8; // Twelve Data free tier allows up to 8 symbols per request
+
+    for (let i = 0; i < tickerArray.length; i += batchSize) {
+      const batch = tickerArray.slice(i, i + batchSize);
+      const symbolParam = batch.join(',');
+
+      const url = `https://api.twelvedata.com/quote?symbol=${symbolParam}&apikey=${API_KEY}`;
+
+      const apiResponse = await fetch(url);
+
+      if (!apiResponse.ok) {
+        throw new Error(`Twelve Data returned ${apiResponse.status}`);
       }
-    });
 
-    if (!apiResponse.ok) {
-      throw new Error(`Yahoo Finance returned ${apiResponse.status}`);
+      const data = await apiResponse.json();
+
+      // Handle both single and batch responses
+      const quotes = Array.isArray(data) ? data : [data];
+
+      for (const item of quotes) {
+        // Skip if there's an error for this symbol
+        if (item.status === 'error') {
+          console.log(`Error for ${item.symbol}: ${item.message}`);
+          continue;
+        }
+
+        const price = parseFloat(item.close) || 0;
+        const previousClose = parseFloat(item.previous_close) || price;
+        const change = price - previousClose;
+        const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
+
+        results.push({
+          symbol: item.symbol,
+          name: item.name || item.symbol,
+          price: price,
+          change: change,
+          changesPercentage: changePercent,
+          marketCap: parseFloat(item.market_cap) || 0,
+          previousClose: previousClose
+        });
+      }
+
+      // Small delay between batch requests to respect rate limits
+      if (i + batchSize < tickerArray.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
     }
-
-    const data = await apiResponse.json();
-    const quotes = data.quoteResponse.result;
-
-    // Convert Yahoo Finance format to FMP-like format for compatibility
-    const converted = quotes.map(item => ({
-      symbol: item.symbol,
-      name: item.longName || item.shortName || item.symbol,
-      price: item.regularMarketPrice || 0,
-      change: item.regularMarketChange || 0,
-      changesPercentage: item.regularMarketChangePercent || 0,
-      marketCap: item.marketCap || 0,
-      previousClose: item.regularMarketPreviousClose || 0
-    }));
 
     // Return the data to the browser
     response.setHeader('Content-Type', 'application/json');
-    response.status(200).json(converted);
+    response.status(200).json(results);
 
   } catch (error) {
-    console.error('Error fetching from Yahoo Finance:', error);
+    console.error('Error fetching from Twelve Data:', error);
     response.status(500).json({
       error: 'Failed to fetch stock data',
       message: error.message
