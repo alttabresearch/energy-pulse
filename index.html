@@ -1004,92 +1004,10 @@
         }
 
         async function fetchCommodities() {
-            if (CONFIG.demoMode) {
-                log('Using demo commodity data');
-                return getDemoPrices();
-            }
-
-            // Try Vercel backend first (recommended)
-            if (CONFIG.useBackend) {
-                const symbols = CONFIG.energySymbols.map(s => s.symbol).join(',');
-                const baseUrl = CONFIG.backendUrl || window.location.origin;
-                const url = `${baseUrl}/api/commodities?symbols=${symbols}`;
-
-                try {
-                    log('Fetching commodities from backend:', url);
-                    const response = await fetchWithTimeout(url);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-                    const data = await response.json();
-                    log('Fetched commodities from backend:', data.length);
-
-                    const results = [];
-                    for (const item of data) {
-                        const config = CONFIG.energySymbols.find(s => s.symbol === item.symbol);
-                        results.push({
-                            symbol: item.symbol,
-                            name: config.name,
-                            unit: config.unit,
-                            price: item.price,
-                            change: item.change,
-                            changePercent: item.changesPercentage,
-                            sparklineData: generateMockSparkline(item.price, item.change)
-                        });
-                    }
-
-                    if (results.length > 0) return results;
-
-                } catch (error) {
-                    log('Backend API failed for commodities, trying direct API call:', error);
-                }
-            }
-
-            // Try Financial Modeling Prep directly
-            if (CONFIG.apiKeys.fmpKey) {
-                const symbols = CONFIG.energySymbols.map(s => s.symbol).join(',');
-                let url = `https://financialmodelingprep.com/api/v3/quote/${symbols}?apikey=${CONFIG.apiKeys.fmpKey}`;
-
-                // Use CORS proxy if enabled
-                if (CONFIG.useCorsProxy) {
-                    url = CONFIG.corsProxyUrl + encodeURIComponent(url);
-                    log('Using CORS proxy for FMP commodities request');
-                }
-
-                try {
-                    const response = await fetchWithTimeout(url);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-                    const data = await response.json();
-                    log('Fetched commodities from FMP:', data.length);
-
-                    const results = [];
-                    for (const item of data) {
-                        const config = CONFIG.energySymbols.find(s => s.symbol === item.symbol);
-                        results.push({
-                            symbol: item.symbol,
-                            name: config.name,
-                            unit: config.unit,
-                            price: item.price,
-                            change: item.change,
-                            changePercent: item.changesPercentage,
-                            sparklineData: generateMockSparkline(item.price, item.change)
-                        });
-                    }
-
-                    if (results.length > 0) return results;
-
-                } catch (error) {
-                    log('FMP API failed for commodities, trying Yahoo Finance fallback:', error);
-                }
-            }
-
-            // Try Yahoo Finance as fallback
-            try {
-                return await fetchCommoditiesFromYahoo();
-            } catch (error) {
-                log('Yahoo Finance failed for commodities, using demo data:', error);
-                return getDemoPrices();
-            }
+            // Always use demo data for commodities to stay within API rate limits
+            // Real-time commodity data requires additional API credits
+            log('Using demo commodity data (preserves API credits for stocks)');
+            return getDemoPrices();
         }
 
         function generateMockSparkline(currentPrice, change) {
